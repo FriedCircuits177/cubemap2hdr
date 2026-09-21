@@ -15,20 +15,50 @@ cargo test            # projection + RGBE round-trip + RLE round-trip
 
 ## Usage
 
+Two sub-commands share the same renderer and the same options.
+
+### `convert` — explicit faces
+
 ```sh
-./target/release/cube2hdr \
+cube2hdr convert \
   --px right.jpg --nx left.jpg \
   --py top.jpg   --ny bottom.jpg \
   --pz back.jpg  --nz front.jpg \
   --output pano.hdr
 ```
 
-Defaults: output width `4 x face_size` (height = width/2), sRGB inputs
-linearised on load, bilinear sampling with 2x2 supersampling, RLE-compressed
-output.
+### `minecraft` — a Minecraft panorama directory
+
+```sh
+cube2hdr minecraft ./assets/minecraft/textures/gui/title/background
+cube2hdr minecraft            # defaults to the current directory
+```
+
+Looks for `panorama_0.png` .. `panorama_5.png` and maps them for you:
+
+| File | Role | Cube face |
+|---|---|---|
+| `panorama_0.png` | back | `+Z` |
+| `panorama_1.png` | right | `+X` |
+| `panorama_2.png` | front | `-Z` (panorama centre) |
+| `panorama_3.png` | left | `-X` |
+| `panorama_4.png` | up (sky) | `+Y` |
+| `panorama_5.png` | down (ground) | `-Y` |
+
+If any of the six are missing, the command names them and exits rather than
+producing a partial panorama.
+
+### Output naming
+
+`--output` is optional everywhere. When omitted, the tool writes
+`cube2hdr_output.hdr` in the current directory; if that already exists it tries
+`cube2hdr_output_1.hdr`, `cube2hdr_output_2.hdr` and so on, so repeated runs
+never clobber earlier results. An explicit `--output` is used verbatim and will
+overwrite.
 
 | Flag | Default | Notes |
 |---|---|---|
+| `--output` | auto-numbered | `cube2hdr_output.hdr`, `_1`, `_2`, ... |
 | `--width` | `4 x face size` | Height is always half |
 | `--filter` | `bilinear` | `bicubic` (Catmull-Rom) is sharper when upscaling past 4x |
 | `--samples` | `2` | N x N supersample grid per output pixel, 1-8 |
@@ -37,6 +67,10 @@ output.
 | `--yaw` | `0` | Degrees; rotates the panorama horizontally |
 | `--no-rle` | off | Write flat scanlines instead of adaptive RLE |
 | `-j`, `--threads` | all cores | |
+
+Shared option defaults: output width `4 x face_size` (height = width/2), sRGB
+inputs linearised on load, bilinear sampling with 2x2 supersampling,
+RLE-compressed output.
 
 ## Face convention
 
@@ -74,3 +108,14 @@ handedness and the faces need transposing before conversion.
   neighbouring face. With correctly rendered faces the error is sub-pixel. If
   you ever see edge artefacts at very low face resolutions, seam-aware sampling
   in `CubeMap::sample` is the place to add it.
+
+## Minecraft notes
+
+Minecraft ships its panorama faces as 1024x1024 PNGs, so the default output is
+4096x2048. The set is rendered from an in-game camera and is already a proper
+cubemap, so no per-face rotation is applied. If the horizon looks rotated for a
+particular pack, `--yaw` fixes it without touching the files.
+
+These are 8-bit sRGB textures: the result is a correct linear-light `.hdr`, but
+its dynamic range is whatever the PNGs held. Use `--exposure` if you need it
+scaled for an IBL setup.
