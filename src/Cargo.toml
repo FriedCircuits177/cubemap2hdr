@@ -1,0 +1,18 @@
+[package]
+name = "cube2hdr"
+version = "0.1.0"
+edition = "2021"
+description = "Convert six square cubemap faces (JPG/PNG) into an equirectangular Radiance .hdr panorama"
+
+[dependencies]
+# Decoders only -- no default features, so we don't pull in the whole format zoo.
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+rayon = "1.10"
+clap = { version = "4.5", features = ["derive"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

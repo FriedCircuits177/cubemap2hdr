@@ -1,0 +1,9 @@
+[package]
+name = "cubemap2hdr"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+rayon = "1.10"
+clap = { version = "4.5", features = ["derive"] }
