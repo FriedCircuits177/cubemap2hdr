@@ -1,4 +1,4 @@
-# cube2hdr
+# cubemap2hdr
 
 Convert six square cubemap faces (JPG/PNG) into one equirectangular panorama in
 Radiance `.hdr` format.
